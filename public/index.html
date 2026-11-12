@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca</title>
+  <style>
+    
+** {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #4a2e1b;
+  background-image: radial-gradient(circle at top, #5e3b24 0%, #3d2414 100%);
+  margin: 0;
+  padding: 40px 20px;
+  color: #2c1a0e;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 800px;
+  margin: auto;
+  background: #f7f1e3;
+  padding: 35px;
+  border-radius: 16px;
+  border: 1px solid #dfd3bc;
+  box-shadow: 0 12px 35px rgba(20, 10, 4, 0.45);
+}
+
+h1 {
+  text-align: center;
+  color: #3b2313;
+  font-family: 'Georgia', serif;
+  font-size: 32px;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+h2 {
+  color: #4a2e1b;
+  font-family: 'Georgia', serif;
+  font-size: 21px;
+  margin-bottom: 18px;
+}
+
+form {
+  display: grid;
+  gap: 14px;
+  margin: 28px 0 35px;
+}
+
+input {
+  padding: 14px;
+  background-color: #fffdf9;
+  border: 1px solid #d5c7af;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #2c1a0e;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+input::placeholder {
+  color: #8c7a6b;
+}
+
+input:focus {
+  border-color: #2d5a43;
+  box-shadow: 0 0 0 3px rgba(45, 90, 67, 0.15);
+}
+
+button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+form button {
+  background: #2d5a43;
+  color: #fdfbf7;
+  font-size: 15px;
+}
+
+form button:hover {
+  background: #214432;
+}
+
+.livro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 0;
+  border-bottom: 1px solid #e0d4be;
+}
+
+.livro > span {
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.acoes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.editar {
+  background: #ebe0c9;
+  color: #5c3d14;
+}
+
+.editar:hover {
+  background: #dfd0b2;
+}
+
+.excluir {
+  background: #f5d8d6;
+  color: #8a2323;
+}
+
+.excluir:hover {
+  background: #ebc2bf;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 20px 12px;
+  }
+
+  main {
+    padding: 22px 18px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .livro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Minha Biblioteca</h1>
+
+    <form id="formLivro">
+      <input id="titulo" placeholder="Título do livro" required>
+      <input id="autor" placeholder="Autor" required>
+      <input id="categoria" placeholder="Categoria" required>
+      <button type="submit">Cadastrar livro</button>
+    </form>
+
+    <h2>Livros cadastrados</h2>
+    <div id="listaLivros"></div>
+  </main>
+
+  <script>
+    const form = document.getElementById("formLivro");
+    const lista = document.getElementById("listaLivros");
+
+    async function carregarLivros() {
+      const resposta = await fetch("/livros");
+      const livros = await resposta.json();
+
+      lista.innerHTML = "";
+
+      livros.forEach((livro) => {
+        const item = document.createElement("div");
+        item.className = "livro";
+
+        const informacoes = document.createElement("span");
+        informacoes.textContent =
+          `${livro.titulo} - ${livro.autor} (${livro.categoria})`;
+
+        const acoes = document.createElement("div");
+        acoes.className = "acoes";
+
+        const editar = document.createElement("button");
+        editar.textContent = "Editar";
+        editar.className = "editar";
+
+        editar.onclick = () => editarLivro(livro);
+
+        const excluir = document.createElement("button");
+        excluir.textContent = "Excluir";
+        excluir.className = "excluir";
+
+        excluir.onclick = () => excluirLivro(livro.id);
+
+        acoes.append(editar, excluir);
+        item.append(informacoes, acoes);
+        lista.appendChild(item);
+      });
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const livro = {
+        titulo: document.getElementById("titulo").value,
+        autor: document.getElementById("autor").value,
+        categoria: document.getElementById("categoria").value
+      };
+
+      const resposta = await fetch("/livros", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(livro)
+      });
+
+      if (resposta.ok) {
+        form.reset();
+        carregarLivros();
+      } else {
+        alert("Não foi possível cadastrar o livro.");
+      }
+    });
+
+    async function editarLivro(livro) {
+      const titulo = prompt("Novo título:", livro.titulo);
+      if (titulo === null) return;
+
+      const autor = prompt("Novo autor:", livro.autor);
+      if (autor === null) return;
+
+      const categoria = prompt("Nova categoria:", livro.categoria);
+      if (categoria === null) return;
+
+      const resposta = await fetch(`/livros/${livro.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo, autor, categoria })
+      });
+
+      if (resposta.ok) carregarLivros();
+      else alert("Não foi possível editar o livro.");
+    }
+
+    async function excluirLivro(id) {
+      if (!confirm("Deseja excluir este livro?")) return;
+
+      const resposta = await fetch(`/livros/${id}`, {
+        method: "DELETE"
+      });
+
+      if (resposta.ok) carregarLivros();
+      else alert("Não foi possível excluir o livro.");
+    }
+
+    carregarLivros();
+  </script>
+</body>
+</html>
