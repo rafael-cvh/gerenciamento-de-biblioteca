@@ -1,7 +1,7 @@
 
 services:
   app:
-    build: .
+    image: rafaezzzzzzz/biblioteca:1.0
     container_name: biblioteca-app
     ports:
       - "3000:3000"
