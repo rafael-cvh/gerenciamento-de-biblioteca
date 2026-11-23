@@ -1,27 +1,44 @@
 
 services:
+  # Serviço responsável pela aplicação
   app:
-    image: rafaezzzzzzz/biblioteca:1.0
+    # Imagem publicada no Docker Hub
+    image: rafaezzzzzzz/biblioteca:1.2
     container_name: biblioteca-app
+
+    # Mapeia a porta do computador para a do container
     ports:
       - "3000:3000"
+
+    # Carrega as variáveis de ambiente da aplicação
     env_file:
       - .env
+
+    # Aguarda o banco ficar saudável antes de iniciar
     depends_on:
       db:
         condition: service_healthy
+
+    # Reinicia automaticamente, exceto se for parado manualmente
     restart: unless-stopped
 
+  # Serviço responsável pelo banco de dados
   db:
     image: postgres:17-alpine
     container_name: biblioteca-db
+
+    # Configura usuário, senha e nome do banco
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+
+    # Monta o volume persistente e o arquivo de inicialização
     volumes:
       - biblioteca_dados:/var/lib/postgresql/data
       - ./banco.sql:/docker-entrypoint-initdb.d/banco.sql:ro
+
+    # Verifica se o PostgreSQL está pronto
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -29,5 +46,6 @@ services:
       retries: 5
     restart: unless-stopped
 
+# Declara o volume persistente
 volumes:
   biblioteca_dados:
